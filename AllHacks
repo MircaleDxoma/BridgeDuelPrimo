@@ -60,13 +60,15 @@ local function attack()
     end
 end
 
-local function rotateTo(target)
-    if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
+local function moveToTarget(target)
+    if not Character then return end
+    local humanoid = Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
     if not target or not target:FindFirstChild("HumanoidRootPart") then return end
-    local myHRP = Character.HumanoidRootPart
-    local targetHRP = target.HumanoidRootPart
-    local dir = (targetHRP.Position - myHRP.Position).Unit
-    myHRP.CFrame = CFrame.new(myHRP.Position, myHRP.Position + dir)
+
+    -- تحرك باتجاه الهدف (طريقة متوافقة مع Delta/Solora)
+    local targetPos = target.HumanoidRootPart.Position
+    humanoid:MoveTo(targetPos)
 end
 
 local function findTarget()
@@ -94,10 +96,16 @@ RunService.RenderStepped:Connect(function()
     end
 
     if currentTarget then
-        rotateTo(currentTarget)
+        moveToTarget(currentTarget)
         if tick() - lastAttackTime >= interval then
             lastAttackTime = tick()
             attack()
+        end
+    else
+        -- إذا ما في هدف، وقف الحركة
+        local humanoid = Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:MoveTo(Character.HumanoidRootPart.Position)
         end
     end
 end)
@@ -127,7 +135,7 @@ local espObjects = {}
 
 local function noclipLoop()
     while noclipEnabled do
-        wait()
+        RunService.Heartbeat:Wait()
         local character = LocalPlayer.Character
         if character then
             for _, part in pairs(character:GetChildren()) do
@@ -139,7 +147,7 @@ local function noclipLoop()
     end
 end
 
-game:GetService("UserInputService").JumpRequest:Connect(function()
+UIS.JumpRequest:Connect(function()
     if infiniteJumpEnabled then
         local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -190,7 +198,6 @@ local function updateESP()
             end
         end
 
-        -- تنظيف أي لوحات إيب لأي لاعب غير موجود حالياً
         for plr, guiObj in pairs(espObjects) do
             if not Players:FindFirstChild(plr.Name) or not plr.Character or not plr.Character:FindFirstChild("Head") then
                 guiObj:Destroy()
@@ -225,11 +232,16 @@ hackButton.MouseButton1Click:Connect(function()
     if hackEnabled then
         spawn(noclipLoop)
     else
-        -- لو طفى Hack ورجع طبيعي في حالة مثبت
         local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
             humanoid.WalkSpeed = 16
             humanoid.JumpPower = 50
+            -- رجع CanCollide طبيعي
+            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
         end
     end
 end)
@@ -251,6 +263,11 @@ UIS.InputBegan:Connect(function(input, gpe)
             if humanoid then
                 humanoid.WalkSpeed = 16
                 humanoid.JumpPower = 50
+                for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
             end
         end
     end
