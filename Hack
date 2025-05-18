@@ -1,1 +1,171 @@
-"-- متغيرات عامة\r\nlocal Players = game:GetService(\"Players\")\r\nlocal RunService = game:GetService(\"RunService\")\r\nlocal TweenService = game:GetService(\"TweenService\")\r\nlocal UIS = game:GetService(\"UserInputService\")\r\nlocal LocalPlayer = Players.LocalPlayer\r\nlocal Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()\r\n\r\n-- واجهة المستخدم\r\nlocal gui = Instance.new(\"ScreenGui\", game.CoreGui)\r\ngui.Name = \"KillAuraAndHackGUI\"\r\n\r\n-- ========== زر KillAura ==========\r\nlocal killAuraButton = Instance.new(\"TextButton\")\r\nkillAuraButton.Size = UDim2.new(0, 130, 0, 40)\r\nkillAuraButton.Position = UDim2.new(0, 20, 0.4, 0)\r\nkillAuraButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)\r\nkillAuraButton.Text = \"🎯 KillAura [OFF]\"\r\nkillAuraButton.TextColor3 = Color3.fromRGB(255, 255, 255)\r\nkillAuraButton.Font = Enum.Font.GothamBold\r\nkillAuraButton.TextSize = 16\r\nkillAuraButton.BorderSizePixel = 0\r\nkillAuraButton.AutoButtonColor = false\r\nkillAuraButton.Parent = gui\r\n\r\nlocal toggled = false\r\nlocal ATTACK_RANGE = 20\r\nlocal cps = 14\r\nlocal interval = 1 / cps\r\nlocal lastAttackTime = 0\r\nlocal currentTarget = nil\r\n\r\nlocal function animateButton(button, on, text)\r\n\tlocal goal = {\r\n\t\tBackgroundColor3 = on and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(30, 30, 30),\r\n\t\tSize = on and UDim2.new(0, 140, 0, 45) or UDim2.new(0, 130, 0, 40),\r\n\t}\r\n\tlocal tween = TweenService:Create(button, TweenInfo.new(0.25), goal)\r\n\ttween:Play()\r\n\tbutton.Text = text\r\nend\r\n\r\nkillAuraButton.MouseButton1Click:Connect(function()\r\n\ttoggled = not toggled\r\n\tanimateButton(killAuraButton, toggled, toggled and \"🎯 KillAura [ON]\" or \"🎯 KillAura [OFF]\")\r\nend)\r\n\r\nUIS.InputBegan:Connect(function(input, gpe)\r\n\tif gpe then return end\r\n\tif UIS:IsKeyDown(Enum.KeyCode.LeftControl) and input.KeyCode == Enum.KeyCode.LeftAlt then\r\n\t\ttoggled = not toggled\r\n\t\tanimateButton(killAuraButton, toggled, toggled and \"🎯 KillAura [ON]\" or \"🎯 KillAura [OFF]\")\r\n\tend\r\nend)\r\n\r\nlocal function attack()\r\n\tlocal tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass(\"Tool\")\r\n\tif tool then\r\n\t\ttool:Activate()\r\n\tend\r\nend\r\n\r\nlocal function rotateTo(target)\r\n\tif not Character or not Character:FindFirstChild(\"HumanoidRootPart\") then return end\r\n\tif not target or not target:FindFirstChild(\"HumanoidRootPart\") then return end\r\n\tlocal myHRP = Character.HumanoidRootPart\r\n\tlocal targetHRP = target.HumanoidRootPart\r\n\tlocal dir = (targetHRP.Position - myHRP.Position).Unit\r\n\tmyHRP.CFrame = CFrame.new(myHRP.Position, myHRP.Position + dir)\r\nend\r\n\r\nlocal function findTarget()\r\n\tlocal nearest, minDist = nil, ATTACK_RANGE\r\n\tfor _, player in pairs(Players:GetPlayers()) do\r\n\t\tif player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(\"HumanoidRootPart\") then\r\n\t\t\tlocal dist = (player.Character.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude\r\n\t\t\tlocal humanoid = player.Character:FindFirstChildOfClass(\"Humanoid\")\r\n\t\t\tif dist \u003C= minDist and humanoid and humanoid.Health > 0 then\r\n\t\t\t\tnearest = player.Character\r\n\t\t\t\tminDist = dist\r\n\t\t\tend\r\n\t\tend\r\n\tend\r\n\treturn nearest\r\nend\r\n\r\nRunService.RenderStepped:Connect(function()\r\n\tif not toggled then return end\r\n\tCharacter = LocalPlayer.Character\r\n\tif not Character or not Character:FindFirstChild(\"HumanoidRootPart\") then return end\r\n\r\n\tif not currentTarget or not currentTarget:FindFirstChild(\"HumanoidRootPart\") or (currentTarget.HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude > ATTACK_RANGE then\r\n\t\tcurrentTarget = findTarget()\r\n\tend\r\n\r\n\tif currentTarget then\r\n\t\trotateTo(currentTarget)\r\n\t\tif tick() - lastAttackTime >= interval then\r\n\t\t\tlastAttackTime = tick()\r\n\t\t\tattack()\r\n\t\tend\r\n\tend\r\nend)\r\n\r\n-- ========== زر Hack بنفس تصميم KillAura ==========\r\nlocal hackButton = Instance.new(\"TextButton\")\r\nhackButton.Size = UDim2.new(0, 130, 0, 40)\r\nhackButton.Position = UDim2.new(0, 20, 0.4, 55)\r\nhackButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)\r\nhackButton.Text = \"💻 Hack [OFF]\"\r\nhackButton.TextColor3 = Color3.fromRGB(255, 255, 255)\r\nhackButton.Font = Enum.Font.GothamBold\r\nhackButton.TextSize = 16\r\nhackButton.BorderSizePixel = 0\r\nhackButton.AutoButtonColor = false\r\nhackButton.Parent = gui\r\n\r\nlocal hackEnabled = false\r\nlocal noclipEnabled = false\r\nlocal infiniteJumpEnabled = false\r\nlocal espEnabled = false\r\n\r\nlocal espFolder = Instance.new(\"Folder\")\r\nespFolder.Name = \"ESPFolder\"\r\n\r\nlocal espObjects = {}\r\n\r\nlocal function noclipLoop()\r\n\twhile noclipEnabled do\r\n\t\twait()\r\n\t\tlocal character = LocalPlayer.Character\r\n\t\tif character then\r\n\t\t\tfor _, part in pairs(character:GetChildren()) do\r\n\t\t\t\tif part:IsA(\"BasePart\") then\r\n\t\t\t\t\tpart.CanCollide = false\r\n\t\t\t\tend\r\n\t\t\tend\r\n\t\tend\r\n\tend\r\nend\r\n\r\ngame:GetService(\"UserInputService\").JumpRequest:Connect(function()\r\n\tif infiniteJumpEnabled then\r\n\t\tlocal humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass(\"Humanoid\")\r\n\t\tif humanoid then\r\n\t\t\thumanoid:ChangeState(Enum.HumanoidStateType.Jumping)\r\n\t\tend\r\n\tend\r\nend)\r\n\r\nlocal function updateESP()\r\n\twhile espEnabled do\r\n\t\twait(0.1)\r\n\t\tfor _, plr in pairs(Players:GetPlayers()) do\r\n\t\t\tif plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild(\"Head\") then\r\n\t\t\t\tif not espObjects[plr] then\r\n\t\t\t\t\tlocal billboard = Instance.new(\"BillboardGui\")\r\n\t\t\t\t\tbillboard.Adornee = plr.Character.Head\r\n\t\t\t\t\tbillboard.AlwaysOnTop = true\r\n\t\t\t\t\tbillboard.ExtentsOffset = Vector3.new(0, 2, 0)\r\n\t\t\t\t\tbillboard.Size = UDim2.new(0, 100, 0, 40)\r\n\t\t\t\t\tbillboard.Parent = espFolder\r\n\r\n\t\t\t\t\tlocal label = Instance.new(\"TextLabel\")\r\n\t\t\t\t\tlabel.BackgroundTransparency = 1\r\n\t\t\t\t\tlabel.Size = UDim2.new(1, 0, 1, 0)\r\n\t\t\t\t\tlabel.Text = plr.Name\r\n\t\t\t\t\tlabel.TextColor3 = plr.TeamColor.Color\r\n\t\t\t\t\tlabel.TextStrokeTransparency = 0.4\r\n\t\t\t\t\tlabel.TextStrokeColor3 = Color3.new(0, 0, 0)\r\n\t\t\t\t\tlabel.Font = Enum.Font.GothamBold\r\n\t\t\t\t\tlabel.TextScaled = true\r\n\t\t\t\t\tlabel.Parent = billboard\r\n\r\n\t\t\t\t\tespObjects[plr] = billboard\r\n\t\t\t\tend\r\n\t\t\telse\r\n\t\t\t\tif espObjects[plr] then\r\n\t\t\t\t\tespObjects[plr]:Destroy()\r\n\t\t\t\t\tespObjects[plr] = nil\r\n\t\t\t\tend\r\n\t\t\tend\r\n\t\tend\r\n\tend\r\n\tfor _, obj in pairs(espObjects) do\r\n\t\tobj:Destroy()\r\n\tend\r\n\tespObjects = {}\r\nend\r\n\r\nlocal function toggleESP(state)\r\n\tespEnabled = state\r\n\tif state then\r\n\t\tespFolder.Parent = game.CoreGui\r\n\t\tcoroutine.wrap(updateESP)()\r\n\telse\r\n\t\tespFolder.Parent = nil\r\n\tend\r\nend\r\n\r\nhackButton.MouseButton1Click:Connect(function()\r\n\thackEnabled = not hackEnabled\r\n\tanimateButton(hackButton, hackEnabled, hackEnabled and \"💻 Hack [ON]\" or \"💻 Hack [OFF]\")\r\n\r\n\tnoclipEnabled = hackEnabled\r\n\tinfiniteJumpEnabled = hackEnabled\r\n\ttoggleESP(hackEnabled)\r\n\r\n\tif hackEnabled then\r\n\t\tspawn(noclipLoop)\r\n\telse\r\n\t\t-- لو طفى Hack ورجع طبيعي في حالة مثبت\r\n\t\tlocal humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass(\"Humanoid\")\r\n\t\tif humanoid then\r\n\t\t\thumanoid.WalkSpeed = 16\r\n\t\t\thumanoid.JumpPower = 50\r\n\t\tend\r\n\t\tfor _, part in pairs(anchoredParts or {}) do\r\n\t\t\tif part and part:IsA(\"BasePart\") then\r\n\t\t\t\tpart.Anchored = false\r\n\t\t\tend\r\n\t\tend\r\n\t\tanchoredParts = {}\r\n\t\tisFixed = false\r\n\tend\r\nend)\r\n\r\n-- ===== زر 8 لتثبيت الشخصية أو إرجاعها =====\r\nlocal isFixed = false\r\nlocal anchoredParts = {}\r\n\r\nlocal function getHumanoid()\r\n\tlocal char = LocalPlayer.Character\r\n\tif char then\r\n\t\treturn char:FindFirstChildOfClass(\"Humanoid\")\r\n\tend\r\n\treturn nil\r\nend\r\n\r\nUIS.InputBegan:Connect(function(input, gpe)\r\n\tif gpe then return end\r\n\tif not hackEnabled then return end -- يشتغل فقط لو Hack شغال\r\n\r\n\tif input.UserInputType == Enum.UserInputType.Keyboard then\r\n\t\tif input.KeyCode == Enum.KeyCode.KeypadEight or input.KeyCode == Enum.KeyCode.Eight then\r\n\t\t\tlocal humanoid = getHumanoid()\r\n\t\t\tif humanoid then\r\n\t\t\t\tlocal char = LocalPlayer.Character\r\n\t\t\t\tif not isFixed then\r\n\t\t\t\t\t-- ثبت الشخصية\r\n\t\t\t\t\thumanoid.WalkSpeed = 0\r\n\t\t\t\t\thumanoid.JumpPower = 0\r\n\t\t\t\t\tanchoredParts = {}\r\n\t\t\t\t\tif char then\r\n\t\t\t\t\t\tfor _, part in pairs(char:GetChildren()) do\r\n\t\t\t\t\t\t\tif part:IsA(\"BasePart\") and not part.Anchored then\r\n\t\t\t\t\t\t\t\ttable.insert(anchoredParts, part)\r\n\t\t\t\t\t\t\t\tpart.Anchored = true\r\n\t\t\t\t\t\t\tend\r\n\t\t\t\t\t\tend\r\n\t\t\t\t\tend\r\n\t\t\t\t\tisFixed = true\r\n\t\t\t\telse\r\n\t\t\t\t\t-- رجع الشخصية طبيعية\r\n\t\t\t\t\thumanoid.WalkSpeed = 16\r\n\t\t\t\t\thumanoid.JumpPower = 50\r\n\t\t\t\t\tfor _, part in pairs(anchoredParts) do\r\n\t\t\t\t\t\tif part and part:IsA(\"BasePart\") then\r\n\t\t\t\t\t\t\tpart.Anchored = false\r\n\t\t\t\t\t\tend\r\n\t\t\t\t\tend\r\n\t\t\t\t\tanchoredParts = {}\r\n\t\t\t\t\tisFixed = false\r\n\t\t\t\tend\r\n\t\t\tend\r\n\t\tend\r\n\tend\r\nend)\r\n\r\n-- لما الشخصية تُعاد (تموت أو تتغير) نرجع المتغيرات للوضع الطبيعي\r\nLocalPlayer.CharacterRemoving:Connect(function()\r\n\tanchoredParts = {}\r\n\tisFixed = false\r\nend)\r\n"
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Mouse = LocalPlayer:GetMouse()
+
+local AttackEvent = ReplicatedStorage:WaitForChild("AttackEvent")
+
+local isActive = false
+local targetPlayer = nil
+
+local clickSpeed = 0.7
+local detectDistance = 20
+
+local orbitAngle = 0
+
+-- انشاء شاشة البداية السوداء مع النصوص
+local SplashScreen = Instance.new("ScreenGui")
+SplashScreen.Name = "SplashScreenGui"
+SplashScreen.Parent = PlayerGui
+
+local Background = Instance.new("Frame")
+Background.Size = UDim2.new(1,0,1,0)
+Background.BackgroundColor3 = Color3.new(0,0,0)
+Background.BackgroundTransparency = 0
+Background.Parent = SplashScreen
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1,0,0.3,0)
+TitleLabel.Position = UDim2.new(0,0,0.3,0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Made By Dxoma"
+TitleLabel.TextColor3 = Color3.new(1,1,1)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 48
+TitleLabel.TextStrokeTransparency = 0
+TitleLabel.Parent = Background
+
+local VersionLabel = Instance.new("TextLabel")
+VersionLabel.Size = UDim2.new(1,0,0.1,0)
+VersionLabel.Position = UDim2.new(0,0,0.6,0)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Text = "Version 1.2"
+VersionLabel.TextColor3 = Color3.new(1,1,1)
+VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.TextSize = 24
+VersionLabel.TextStrokeTransparency = 0
+VersionLabel.Parent = Background
+
+-- Tween لظهور الشاشة (fade in)
+local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
+-- شاشة البداية تظهر 2 ثانية ثم تختفي بانيميشن
+task.delay(2, function()
+    local fadeTween = TweenService:Create(Background, fadeOutInfo, {BackgroundTransparency = 1})
+    local titleTween = TweenService:Create(TitleLabel, fadeOutInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+    local versionTween = TweenService:Create(VersionLabel, fadeOutInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+
+    fadeTween:Play()
+    titleTween:Play()
+    versionTween:Play()
+
+    fadeTween.Completed:Wait()
+    SplashScreen:Destroy()
+    -- يبدأ السكربت بعد ما تختفي الشاشة
+    isActive = true
+end)
+
+-- انشاء واجهة Solara V3
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SolaraV3Gui"
+ScreenGui.Parent = PlayerGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 120, 0, 40)
+ToggleButton.Position = UDim2.new(0.5, -60, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 18
+ToggleButton.Text = "Auto Attack OFF"
+ToggleButton.Parent = ScreenGui
+
+local function findClosestPlayer()
+    local closest = nil
+    local closestDist = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist <= detectDistance and dist < closestDist then
+                closest = player
+                closestDist = dist
+            end
+        end
+    end
+    return closest
+end
+
+local function hasWoodenSword()
+    local sword = LocalPlayer.PlayerGui:FindFirstChild("Hotbar") 
+                 and LocalPlayer.PlayerGui.Hotbar:FindFirstChild("MainFrame")
+                 and LocalPlayer.PlayerGui.Hotbar.MainFrame:FindFirstChild("Background")
+                 and LocalPlayer.PlayerGui.Hotbar.MainFrame.Background:FindFirstChild("SlotContainer")
+                 and LocalPlayer.PlayerGui.Hotbar.MainFrame.Background.SlotContainer:FindFirstChild("One")
+                 and LocalPlayer.PlayerGui.Hotbar.MainFrame.Background.SlotContainer.One:FindFirstChild("ViewportFrame")
+                 and LocalPlayer.PlayerGui.Hotbar.MainFrame.Background.SlotContainer.One.ViewportFrame:FindFirstChild("WoodenSword")
+    return sword ~= nil
+end
+
+local function orbitTarget(targetPos, deltaTime)
+    local radius = (HumanoidRootPart.Position - targetPos).Magnitude
+    local angularSpeed = 6
+
+    orbitAngle = orbitAngle + angularSpeed * deltaTime
+
+    local newX = targetPos.X + radius * math.cos(orbitAngle)
+    local newZ = targetPos.Z + radius * math.sin(orbitAngle)
+    local newY = HumanoidRootPart.Position.Y
+
+    local newPos = Vector3.new(newX, newY, newZ)
+    HumanoidRootPart.CFrame = CFrame.new(newPos, targetPos)
+end
+
+local lastAttack = 0
+
+local function attackTarget(targetChar)
+    if not targetChar or not targetChar:FindFirstChild("Humanoid") then return end
+    AttackEvent:FireServer(targetChar)
+end
+
+RunService.RenderStepped:Connect(function(deltaTime)
+    if Mouse.Target and Mouse.Target:IsDescendantOf(ToggleButton) then return end
+    if not isActive then return end
+
+    targetPlayer = findClosestPlayer()
+
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPos = targetPlayer.Character.HumanoidRootPart.Position
+
+        orbitTarget(targetPos, deltaTime)
+
+        local dist = (HumanoidRootPart.Position - targetPos).Magnitude
+        if dist > detectDistance then
+            HumanoidRootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 0, 3), targetPos)
+        end
+
+        if hasWoodenSword() then
+            local now = tick()
+            if now - lastAttack >= clickSpeed then
+                attackTarget(targetPlayer.Character)
+                lastAttack = now
+            end
+        end
+    end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    if Mouse.Target and Mouse.Target:IsDescendantOf(ToggleButton) then return end
+    isActive = not isActive
+    ToggleButton.Text = isActive and "Auto Attack ON" or "Auto Attack OFF"
+end)
